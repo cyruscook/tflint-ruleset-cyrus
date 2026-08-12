@@ -1,0 +1,2 @@
+# Don't track the built plugin binary.
+/tflint-ruleset-cyrus
