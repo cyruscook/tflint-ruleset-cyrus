@@ -1,10 +1,6 @@
 # TFLint Ruleset Cyrus
 
-[![Build Status](https://github.com/terraform-linters/tflint-ruleset-cyrus/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/terraform-linters/tflint-ruleset-cyrus/actions)
-
-A custom [TFLint](https://github.com/terraform-linters/tflint) ruleset plugin built with the [TFLint Plugin SDK](https://github.com/terraform-linters/tflint-plugin-sdk).
-
-The repository starts with reference rules covering resource attributes, nested blocks, rule configuration, and non-resource blocks. Replace or extend the rules in `rules/` as the ruleset evolves.
+Custom opinionated Terraform ruleset.
 
 ## Requirements
 
@@ -13,7 +9,7 @@ The repository starts with reference rules covering resource attributes, nested 
 
 ## Installation
 
-After publishing a GitHub release that follows TFLint's plugin asset naming requirements, install the ruleset with `tflint --init`:
+Install the ruleset with `tflint --init`:
 
 ```hcl
 plugin "cyrus" {
@@ -39,21 +35,13 @@ plugin "cyrus" {
 
 ## Rules
 
-| Name | Description | Severity | Enabled |
-| --- | --- | --- | --- |
-| `aws_instance_example_type` | Example rule for accessing and evaluating top-level attributes | ERROR | Yes |
-| `aws_s3_bucket_example_lifecycle_rule` | Example rule for accessing top-level and nested blocks and attributes | ERROR | Yes |
-| `google_compute_ssl_policy` | Example rule with a custom rule configuration | WARNING | No |
-| `terraform_backend_type` | Example rule for accessing non-resource blocks | ERROR | Yes |
-
-The `google_compute_ssl_policy` rule requires configuration in `.tflint.hcl`:
-
-```hcl
-rule "google_compute_ssl_policy" {
-  enabled          = true
-  allowed_versions = ["TLS_1_2"]
-}
-```
+| Name                                              | Description                                                                                  | Severity | Enabled |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------- | ------- |
+| `aws_no_hardcoded_partition`                      | AWS ARNs must use `data.aws_partition` instead of a hardcoded partition                      | ERROR    | Yes     |
+| `aws_no_hardcoded_service_principal`              | AWS service principals must use `data.aws_service_principal` instead of a hardcoded hostname | ERROR    | Yes     |
+| `aws_s3_bucket_account_regional_namespace`        | `aws_s3_bucket` resources must set `bucket_namespace = "account-regional"`                   | ERROR    | Yes     |
+| `terraform_backend_s3_account_regional_namespace` | S3 backend buckets must use the `-<12-digit-account>-<region>-an` namespace suffix           | ERROR    | Yes     |
+| `terraform_backend_s3_use_lockfile`               | S3 backends must set `use_lockfile = true`                                                   | ERROR    | Yes     |
 
 ## Building and testing
 
