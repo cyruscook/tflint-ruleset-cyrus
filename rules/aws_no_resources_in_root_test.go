@@ -19,10 +19,12 @@ func (r *childModuleRunner) GetModulePath() (addrs.Module, error) {
 
 func TestAwsNoResourcesInRoot(t *testing.T) {
 	tests := []struct {
-		name  string
-		src   string
-		child bool
-		want  helper.Issues
+		name     string
+		filename string
+		src      string
+		config   string
+		child    bool
+		want     helper.Issues
 	}{
 		{
 			name: "root AWS resource",
@@ -58,11 +60,45 @@ module "example" {}`,
 			child: true,
 			want:  helper.Issues{},
 		},
+		{
+			name:     "unconfigured chdir root AWS resource",
+			filename: "deploy/main.tf",
+			src:      `resource "aws_s3_bucket" "example" {}`,
+			want:     helper.Issues{&helper.Issue{Rule: NewAwsNoResourcesInRootRule(), Message: awsNoResourcesInRootMessage, Range: hcl.Range{Filename: "deploy/main.tf", Start: hcl.Pos{Line: 1, Column: 1}, End: hcl.Pos{Line: 1, Column: 35}}}},
+		},
+		{
+			name:     "arbitrarily named recursive module directory AWS resource ignored",
+			filename: "deploy/components/website/s3.tf",
+			src:      `resource "aws_s3_bucket" "example" {}`,
+			config: `rule "aws_no_resources_in_root" {
+  enabled           = true
+  root_module_paths = [".", "deploy/environments/*"]
+}`,
+			want: helper.Issues{},
+		},
+		{
+			name:     "configured recursive root AWS resource",
+			filename: "deploy/environments/production/main.tf",
+			src:      `resource "aws_s3_bucket" "example" {}`,
+			config: `rule "aws_no_resources_in_root" {
+  enabled           = true
+  root_module_paths = [".", "deploy/environments/*"]
+}`,
+			want: helper.Issues{&helper.Issue{Rule: NewAwsNoResourcesInRootRule(), Message: awsNoResourcesInRootMessage, Range: hcl.Range{Filename: "deploy/environments/production/main.tf", Start: hcl.Pos{Line: 1, Column: 1}, End: hcl.Pos{Line: 1, Column: 35}}}},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			baseRunner := helper.TestRunner(t, map[string]string{"main.tf": test.src})
+			filename := test.filename
+			if filename == "" {
+				filename = "main.tf"
+			}
+			files := map[string]string{filename: test.src}
+			if test.config != "" {
+				files[".tflint.hcl"] = test.config
+			}
+			baseRunner := helper.TestRunner(t, files)
 			var runner tflint.Runner = baseRunner
 			if test.child {
 				runner = &childModuleRunner{Runner: baseRunner}
