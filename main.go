@@ -14,7 +14,6 @@ func main() {
 			Rules: []tflint.Rule{
 				rules.NewAwsNoHardcodedPartitionRule(),
 				rules.NewAwsNoHardcodedServicePrincipalRule(),
-				rules.NewAwsNoResourcesInRootRule(),
 				rules.NewAwsS3BucketAccountRegionalNamespaceRule(),
 				rules.NewTerraformBackendS3AccountRegionalNamespaceRule(),
 				rules.NewTerraformBackendS3UseLockfileRule(),
