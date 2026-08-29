@@ -17,6 +17,7 @@ func main() {
 				rules.NewAwsS3BucketAccountRegionalNamespaceRule(),
 				rules.NewTerraformBackendS3AccountRegionalNamespaceRule(),
 				rules.NewTerraformBackendS3UseLockfileRule(),
+				rules.NewTerraformVariableNullableRule(),
 			},
 		},
 	})
