@@ -33,6 +33,14 @@ func (r *TerraformBackendS3UseLockfileRule) Check(runner tflint.Runner) error {
 	}
 
 	for _, block := range blocks {
+		empty, err := s3BackendBlockIsEmpty(runner, block)
+		if err != nil {
+			return err
+		}
+		if empty {
+			continue
+		}
+
 		attr, ok := block.Body.Attributes["use_lockfile"]
 		if !ok {
 			if err := runner.EmitIssue(r, terraformBackendS3UseLockfileMessage, block.DefRange); err != nil {

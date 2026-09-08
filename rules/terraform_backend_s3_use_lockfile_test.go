@@ -14,6 +14,13 @@ func TestTerraformBackendS3UseLockfile(t *testing.T) {
 		want helper.Issues
 	}{
 		{
+			name: "empty backend config passes",
+			src: `terraform {
+  backend "s3" {}
+}`,
+			want: helper.Issues{},
+		},
+		{
 			name: "true passes",
 			src: `terraform {
   backend "s3" {
@@ -34,7 +41,9 @@ func TestTerraformBackendS3UseLockfile(t *testing.T) {
 		{
 			name: "missing fails",
 			src: `terraform {
-  backend "s3" {}
+  backend "s3" {
+    key = "state"
+  }
 }`,
 			want: helper.Issues{&helper.Issue{Rule: NewTerraformBackendS3UseLockfileRule(), Message: terraformBackendS3UseLockfileMessage, Range: hcl.Range{Filename: "main.tf", Start: hcl.Pos{Line: 2, Column: 3}, End: hcl.Pos{Line: 2, Column: 15}}}},
 		},

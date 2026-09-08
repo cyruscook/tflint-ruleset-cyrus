@@ -37,6 +37,14 @@ func (r *TerraformBackendS3AccountRegionalNamespaceRule) Check(runner tflint.Run
 	}
 
 	for _, block := range blocks {
+		empty, err := s3BackendBlockIsEmpty(runner, block)
+		if err != nil {
+			return err
+		}
+		if empty {
+			continue
+		}
+
 		attr, ok := block.Body.Attributes["bucket"]
 		if !ok {
 			if err := runner.EmitIssue(r, terraformBackendS3AccountRegionalNamespaceMessage, block.DefRange); err != nil {

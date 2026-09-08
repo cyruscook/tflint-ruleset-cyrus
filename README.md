@@ -40,8 +40,8 @@ plugin "cyrus" {
 | `aws_no_hardcoded_partition`                      | AWS ARNs must use `data.aws_partition` instead of a hardcoded partition                      | ERROR    | Yes     |
 | `aws_no_hardcoded_service_principal`              | AWS service principals must use `data.aws_service_principal` instead of a hardcoded hostname | ERROR    | Yes     |
 | `aws_s3_bucket_account_regional_namespace`        | `aws_s3_bucket` resources must set `bucket_namespace = "account-regional"`                   | ERROR    | Yes     |
-| `terraform_backend_s3_account_regional_namespace` | S3 backend buckets must use the `-<12-digit-account>-<region>-an` namespace suffix           | ERROR    | Yes     |
-| `terraform_backend_s3_use_lockfile`               | S3 backends must set `use_lockfile = true`                                                   | ERROR    | Yes     |
+| `terraform_backend_s3_account_regional_namespace` | S3 backend buckets must use the `-<12-digit-account>-<region>-an` namespace suffix; empty backend blocks are allowed for external configuration | ERROR    | Yes     |
+| `terraform_backend_s3_use_lockfile`               | S3 backends must set `use_lockfile = true`; empty backend blocks are allowed for external configuration                            | ERROR    | Yes     |
 | `terraform_variable_nullable`                     | Variables must explicitly set the nullable attribute                                      | ERROR    | Yes     |
 
 ## Building and testing
