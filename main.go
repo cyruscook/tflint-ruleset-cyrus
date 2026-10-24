@@ -10,7 +10,7 @@ func main() {
 	plugin.Serve(&plugin.ServeOpts{
 		RuleSet: &tflint.BuiltinRuleSet{
 			Name:    "cyrus",
-			Version: "0.1.0",
+			Version: version,
 			Rules: []tflint.Rule{
 				rules.NewAwsNoHardcodedPartitionRule(),
 				rules.NewAwsNoHardcodedServicePrincipalRule(),
