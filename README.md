@@ -14,7 +14,7 @@ Install the ruleset with `tflint --init`:
 ```hcl
 plugin "cyrus" {
   enabled = true
-  version = "0.6.0" # x-release-please-version
+  version = "0.6.1" # x-release-please-version
   source  = "github.com/cyruscook/tflint-ruleset-cyrus"
 }
 ```
