@@ -1,0 +1,73 @@
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please-main
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ github.sha }}
+
+  release-please:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      release-created: ${{ steps.release.outputs.release_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
+      pr-sha: ${{ steps.pr.outputs.sha }}
+    steps:
+    - name: Update release PR or create release
+      id: release
+      uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+      with:
+        config-file: release-please-config.json
+        manifest-file: .release-please-manifest.json
+    - name: Resolve release PR head for validation
+      if: steps.release.outputs.prs_created == 'true'
+      id: pr
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ fromJSON(steps.release.outputs.pr).number }}
+      run: |
+        sha=$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER" --jq '.head.sha')
+        [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+        echo "sha=$sha" >> "$GITHUB_OUTPUT"
+        echo "Validating release PR #$PR_NUMBER at $sha" >> "$GITHUB_STEP_SUMMARY"
+
+  # GITHUB_TOKEN-created PR events may need human approval. Validate explicitly
+  # in this run without passing publishing secrets or write permissions.
+  validate-release-pr:
+    needs: release-please
+    if: needs.release-please.outputs.pr-sha != ''
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.release-please.outputs.pr-sha }}
+
+  # GITHUB_TOKEN-created tags do not trigger the tag-push workflow.
+  publish:
+    needs: release-please
+    if: needs.release-please.outputs.release-created == 'true'
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag }}
+    secrets:
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      PASSPHRASE: ${{ secrets.PASSPHRASE }}
