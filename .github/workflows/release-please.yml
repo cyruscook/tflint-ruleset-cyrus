@@ -36,23 +36,33 @@ jobs:
         config-file: release-please-config.json
         manifest-file: .release-please-manifest.json
     - name: Resolve release PR head for validation
-      if: steps.release.outputs.prs_created == 'true'
+      if: success() && steps.release.outcome == 'success' && steps.release.outputs.prs_created == 'true'
       id: pr
       env:
         GH_TOKEN: ${{ github.token }}
         GH_REPO: ${{ github.repository }}
-        PR_NUMBER: ${{ fromJSON(steps.release.outputs.pr).number }}
+        RELEASE_PR: ${{ steps.release.outputs.pr }}
       run: |
-        sha=$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER" --jq '.head.sha')
+        # Parse at runtime, never while GitHub evaluates a skipped step's env.
+        if [ -z "$RELEASE_PR" ]; then
+          echo "::error::Release Please reported a PR but returned empty PR output."
+          exit 1
+        fi
+        if ! pr_number=$(jq -er 'select(type == "object") | .number | select(type == "number" and . > 0 and . == floor)' <<< "$RELEASE_PR"); then
+          echo "::error::Release Please returned invalid PR output; expected a positive integer number."
+          exit 1
+        fi
+        [[ "$pr_number" =~ ^[1-9][0-9]*$ ]]
+        sha=$(gh api "repos/$GH_REPO/pulls/$pr_number" --jq '.head.sha')
         [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
         echo "sha=$sha" >> "$GITHUB_OUTPUT"
-        echo "Validating release PR #$PR_NUMBER at $sha" >> "$GITHUB_STEP_SUMMARY"
+        echo "Validating release PR #$pr_number at $sha" >> "$GITHUB_STEP_SUMMARY"
 
   # GITHUB_TOKEN-created PR events may need human approval. Validate explicitly
   # in this run without passing publishing secrets or write permissions.
   validate-release-pr:
     needs: release-please
-    if: needs.release-please.outputs.pr-sha != ''
+    if: needs.release-please.result == 'success' && needs.release-please.outputs.pr-sha != ''
     uses: ./.github/workflows/build.yml
     with:
       ref: ${{ needs.release-please.outputs.pr-sha }}
@@ -60,7 +70,7 @@ jobs:
   # GITHUB_TOKEN-created tags do not trigger the tag-push workflow.
   publish:
     needs: release-please
-    if: needs.release-please.outputs.release-created == 'true'
+    if: needs.release-please.result == 'success' && needs.release-please.outputs.release-created == 'true' && needs.release-please.outputs.tag != ''
     permissions:
       contents: write
       id-token: write
