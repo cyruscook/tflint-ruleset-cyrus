@@ -38,5 +38,8 @@ jobs:
         go-version-file: 'go.mod'
     - name: Run tests
       run: make test
+    - name: Test Release Please output handling
+      if: runner.os == 'Linux'
+      run: python3 -m unittest discover -s .github/tests -v
     - name: Run build
       run: make build
